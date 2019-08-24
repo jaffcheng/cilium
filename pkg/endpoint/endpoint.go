@@ -124,9 +124,9 @@ type Endpoint struct {
 	// Note: The JSON tag was kept for backward compatibility.
 	containerID string `json:"dockerID,omitempty"`
 
-	// DockerNetworkID is the network ID of the libnetwork network if the
+	// dockerNetworkID is the network ID of the libnetwork network if the
 	// endpoint is a docker managed container which uses libnetwork
-	DockerNetworkID string
+	dockerNetworkID string
 
 	// DockerEndpointID is the Docker network endpoint ID if managed by
 	// libnetwork
@@ -1153,7 +1153,7 @@ func (e *Endpoint) SetDockerEndpointID(id string) {
 // SetDockerNetworkID modifies the endpoint's Docker Endpoint ID
 func (e *Endpoint) SetDockerNetworkID(id string) {
 	e.UnconditionalLock()
-	e.DockerNetworkID = id
+	e.dockerNetworkID = id
 	e.Unlock()
 }
 
@@ -1162,7 +1162,7 @@ func (e *Endpoint) GetDockerNetworkID() string {
 	e.UnconditionalRLock()
 	defer e.RUnlock()
 
-	return e.DockerNetworkID
+	return e.dockerNetworkID
 }
 
 // setDatapathMapIDAndPinMap modifies the endpoint's datapath map ID
