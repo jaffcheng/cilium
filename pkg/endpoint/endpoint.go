@@ -121,8 +121,7 @@ type Endpoint struct {
 	containerName string
 
 	// containerID is the container ID that docker has assigned to the endpoint
-	// Note: The JSON tag was kept for backward compatibility.
-	containerID string `json:"dockerID,omitempty"`
+	containerID string
 
 	// dockerNetworkID is the network ID of the libnetwork network if the
 	// endpoint is a docker managed container which uses libnetwork
