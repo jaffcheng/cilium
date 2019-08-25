@@ -68,7 +68,7 @@ func getEndpointStatusControllers(status *models.EndpointStatus) (controllers ci
 func (e *Endpoint) getEndpointStatusLog() (log []*models.EndpointStatusChange) {
 	added := 0
 
-	if s := e.Status; s != nil {
+	if s := e.status; s != nil {
 		s.indexMU.RLock()
 		defer s.indexMU.RUnlock()
 
@@ -306,7 +306,7 @@ func (e *Endpoint) GetCiliumEndpointStatus() *cilium_v2.EndpointStatus {
 
 		// Scheduled for deprecation in 1.5
 		//
-		// Status is deprecated but we have some users depending on
+		// status is deprecated but we have some users depending on
 		// these fields so they continue to be populated until version
 		// 1.5
 		Status: &cilium_v2.DeprecatedEndpointStatus{

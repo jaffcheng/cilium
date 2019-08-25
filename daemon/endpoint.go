@@ -268,7 +268,7 @@ func (d *Daemon) deleteEndpoint(ep *endpoint.Endpoint) int {
 	scopedLog := log.WithField(logfields.EndpointID, ep.ID)
 	errs := d.deleteEndpointQuiet(ep, endpoint.DeleteConfig{
 		// If the IP is managed by an external IPAM, it does not need to be released
-		NoIPRelease: ep.DatapathConfiguration.ExternalIPAM,
+		NoIPRelease: ep.HasExternalIPAM(),
 	})
 	for _, err := range errs {
 		scopedLog.WithError(err).Warn("Ignoring error while deleting endpoint")
@@ -458,7 +458,7 @@ func (h *getEndpointIDLog) Handle(params GetEndpointIDLogParams) middleware.Resp
 	} else if ep == nil {
 		return NewGetEndpointIDLogNotFound()
 	} else {
-		return NewGetEndpointIDLogOK().WithPayload(ep.Status.GetModel())
+		return NewGetEndpointIDLogOK().WithPayload(ep.GetStatusModel())
 	}
 }
 

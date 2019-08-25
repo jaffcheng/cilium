@@ -809,7 +809,7 @@ func init() {
 	flags.Int(option.PolicyQueueSize, defaults.PolicyQueueSize, "size of queues for policy-related events")
 	option.BindEnv(option.PolicyQueueSize)
 
-	flags.Int(option.EndpointQueueSize, defaults.EndpointQueueSize, "size of eventQueue per-endpoint")
+	flags.Int(option.EndpointQueueSize, defaults.EndpointQueueSize, "size of EventQueue per-endpoint")
 	option.BindEnv(option.EndpointQueueSize)
 
 	flags.Bool(option.SelectiveRegeneration, true, "only regenerate endpoints which need to be regenerated upon policy changes")

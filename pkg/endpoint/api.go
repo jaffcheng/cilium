@@ -42,16 +42,16 @@ func (e *Endpoint) GetLabelsModel() (*models.LabelConfiguration, error) {
 		return nil, err
 	}
 	spec := &models.LabelConfigurationSpec{
-		User: e.OpLabels.Custom.GetModel(),
+		User: e.allLabels.Custom.GetModel(),
 	}
 
 	cfg := models.LabelConfiguration{
 		Spec: spec,
 		Status: &models.LabelConfigurationStatus{
 			Realized:         spec,
-			SecurityRelevant: e.OpLabels.OrchestrationIdentity.GetModel(),
-			Derived:          e.OpLabels.OrchestrationInfo.GetModel(),
-			Disabled:         e.OpLabels.Disabled.GetModel(),
+			SecurityRelevant: e.allLabels.OrchestrationIdentity.GetModel(),
+			Derived:          e.allLabels.OrchestrationInfo.GetModel(),
+			Disabled:         e.allLabels.Disabled.GetModel(),
 		},
 	}
 	e.runlock()
@@ -72,14 +72,14 @@ func NewEndpointFromChangeModel(owner regeneration.Owner, base *models.EndpointC
 		dockerNetworkID:  base.DockerNetworkID,
 		dockerEndpointID: base.DockerEndpointID,
 		ifName:           base.InterfaceName,
-		K8sPodName:       base.K8sPodName,
-		K8sNamespace:     base.K8sNamespace,
+		k8sPodName:       base.K8sPodName,
+		k8sNamespace:     base.K8sNamespace,
 		datapathMapID:    int(base.DatapathMapID),
 		ifIndex:          int(base.InterfaceIndex),
-		OpLabels:         labels.NewOpLabels(),
+		allLabels:        labels.NewOpLabels(),
 		DNSHistory:       fqdn.NewDNSCacheWithLimit(option.Config.ToFQDNsMinTTL, option.Config.ToFQDNsMaxIPsPerHost),
 		state:            "",
-		Status:           NewEndpointStatus(),
+		status:           NewEndpointStatus(),
 		hasBPFProgram:    make(chan struct{}, 0),
 		desiredPolicy:    policy.NewEndpointPolicy(owner.GetPolicyRepository()),
 		controllers:      controller.NewManager(),
@@ -108,7 +108,7 @@ func NewEndpointFromChangeModel(owner regeneration.Owner, base *models.EndpointC
 			if err != nil {
 				return nil, err
 			}
-			ep.IPv6 = ip6
+			ep.ipv6 = ip6
 		}
 
 		if ip := base.Addressing.IPV4; ip != "" {
@@ -116,7 +116,7 @@ func NewEndpointFromChangeModel(owner regeneration.Owner, base *models.EndpointC
 			if err != nil {
 				return nil, err
 			}
-			ep.IPv4 = ip4
+			ep.ipv4 = ip4
 		}
 	}
 
@@ -140,7 +140,7 @@ func NewEndpointFromChangeModel(owner regeneration.Owner, base *models.EndpointC
 		base.DatapathConfiguration.RequireRouting = &disabled
 	}
 
-	ep.SetDefaultOpts(option.Config.Opts)
+	ep.setDefaultOpts(option.Config.Opts)
 
 	ep.UpdateLogger(nil)
 	ep.setState(string(base.State), "Endpoint creation")
@@ -156,19 +156,19 @@ func (e *Endpoint) GetModelRLocked() *models.Endpoint {
 	}
 
 	currentState := models.EndpointState(e.state)
-	if currentState == models.EndpointStateReady && e.Status.CurrentStatus() != OK {
+	if currentState == models.EndpointStateReady && e.status.CurrentStatus() != OK {
 		currentState = models.EndpointStateNotReady
 	}
 
 	// This returns the most recent log entry for this endpoint. It is backwards
 	// compatible with the json from before we added `cilium endpoint log` but it
 	// only returns 1 entry.
-	statusLog := e.Status.GetModel()
+	statusLog := e.status.GetModel()
 	if len(statusLog) > 0 {
 		statusLog = statusLog[:1]
 	}
 
-	lblMdl := model.NewModel(&e.OpLabels)
+	lblMdl := model.NewModel(&e.allLabels)
 
 	// Sort these slices since they come out in random orders. This allows
 	// reflect.DeepEqual to succeed.
@@ -199,8 +199,8 @@ func (e *Endpoint) GetModelRLocked() *models.Endpoint {
 			Labels:   lblMdl,
 			Networking: &models.EndpointNetworking{
 				Addressing: []*models.AddressPair{{
-					IPV4: e.IPv4.String(),
-					IPV6: e.IPv6.String(),
+					IPV4: e.ipv4.String(),
+					IPV6: e.ipv6.String(),
 				}},
 				InterfaceIndex: int64(e.ifIndex),
 				InterfaceName:  e.ifName,
@@ -233,7 +233,7 @@ func (e *Endpoint) GetModelRLocked() *models.Endpoint {
 func (e *Endpoint) getHealthModel() *models.EndpointHealth {
 	// Duplicated from GetModelRLocked.
 	currentState := models.EndpointState(e.state)
-	if currentState == models.EndpointStateReady && e.Status.CurrentStatus() != OK {
+	if currentState == models.EndpointStateReady && e.status.CurrentStatus() != OK {
 		currentState = models.EndpointStateNotReady
 	}
 
@@ -505,13 +505,13 @@ func (e *Endpoint) ProcessChangeRequest(newEp *Endpoint, validPatchTransitionSta
 		changed = true
 	}
 
-	if ip := newEp.IPv6; len(ip) != 0 && bytes.Compare(e.IPv6, newEp.IPv6) != 0 {
-		e.IPv6 = newEp.IPv6
+	if ip := newEp.ipv6; len(ip) != 0 && bytes.Compare(e.ipv6, newEp.ipv6) != 0 {
+		e.ipv6 = newEp.ipv6
 		changed = true
 	}
 
-	if ip := newEp.IPv4; len(ip) != 0 && bytes.Compare(e.IPv4, newEp.IPv4) != 0 {
-		e.IPv4 = newEp.IPv4
+	if ip := newEp.ipv4; len(ip) != 0 && bytes.Compare(e.ipv4, newEp.ipv4) != 0 {
+		e.ipv4 = newEp.ipv4
 		changed = true
 	}
 
@@ -554,7 +554,7 @@ func (e *Endpoint) GetConfigSpecModel() *models.EndpointConfigurationStatus {
 	return &models.EndpointConfigurationStatus{
 		Realized: &models.EndpointConfigurationSpec{
 			LabelConfiguration: &models.LabelConfigurationSpec{
-				User: e.OpLabels.Custom.GetModel(),
+				User: e.allLabels.Custom.GetModel(),
 			},
 			Options: *e.Options.GetMutableModel(),
 		},
@@ -567,7 +567,7 @@ func (e *Endpoint) ApplyUserLabelChanges(lbls labels.Labels) (add, del labels.La
 		return nil, nil, err
 	}
 
-	add, del = e.OpLabels.SplitUserLabelChanges(lbls)
+	add, del = e.allLabels.SplitUserLabelChanges(lbls)
 	e.runlock()
 
 	return
