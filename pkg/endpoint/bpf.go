@@ -735,7 +735,7 @@ func (e *Endpoint) finalizeProxyState(regenContext *regenerationContext, err err
 	if err == nil {
 		// Always execute the finalization code, even if the endpoint is
 		// terminating, in order to properly release resources.
-		e.UnconditionalLock()
+		e.unconditionalLock()
 		e.getLogger().Debug("Finalizing successful endpoint regeneration")
 		datapathRegenCtx.finalizeList.Finalize()
 		e.Unlock()
@@ -842,7 +842,7 @@ func (e *Endpoint) scrubIPsInConntrackTableLocked() {
 }
 
 func (e *Endpoint) scrubIPsInConntrackTable() {
-	e.UnconditionalLock()
+	e.unconditionalLock()
 	e.scrubIPsInConntrackTableLocked()
 	e.Unlock()
 }
@@ -855,7 +855,7 @@ func (e *Endpoint) scrubIPsInConntrackTable() {
 // The endpoint lock must NOT be held.
 func (e *Endpoint) SkipStateClean() {
 	// Mark conntrack as already cleaned
-	e.UnconditionalLock()
+	e.unconditionalLock()
 	e.ctCleaned = true
 	e.Unlock()
 }
