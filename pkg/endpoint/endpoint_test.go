@@ -586,7 +586,7 @@ func (n *EndpointDeadlockEvent) Handle(ifc chan interface{}) {
 	// We need to sleep here so that we are consuming an event off the queue,
 	// but not acquiring the lock yet.
 	// There isn't much of a better way to ensure that an Event is being
-	// processed off of the EventQueue, but hasn't acquired the Endpoint's
+	// processed off of the eventQueue, but hasn't acquired the Endpoint's
 	// lock *before* we call deleteEndpointQuiet (see below test).
 	close(n.deadlockChan)
 	time.Sleep(deadlockTimeout)
@@ -622,13 +622,13 @@ func (s *EndpointSuite) TestEndpointEventQueueDeadlockUponDeletion(c *C) {
 	ctx, cancel := context.WithTimeout(context.Background(), deadlockTestTimeout)
 	defer cancel()
 
-	// Create three events that go on the endpoint's EventQueue. We need three
+	// Create three events that go on the endpoint's eventQueue. We need three
 	// events because the first event enqueued immediately is consumed off of
 	// the queue; the second event is put onto the queue (which has length of
 	// one), and the third queue is waiting for the queue's buffer to not be
 	// full (e.g., the first event is finished processing). If the first event
 	// gets stuck processing forever due to deadlock, then the third event
-	// will never be consumed, and the endpoint's EventQueue will never be
+	// will never be consumed, and the endpoint's eventQueue will never be
 	// closed because Enqueue gets stuck.
 	ev1Ch := make(chan struct{})
 	ev2Ch := make(chan struct{})
@@ -652,18 +652,18 @@ func (s *EndpointSuite) TestEndpointEventQueueDeadlockUponDeletion(c *C) {
 	ev2EnqueueCh := make(chan struct{})
 
 	go func() {
-		_, err := ep.EventQueue.Enqueue(ev)
+		_, err := ep.eventQueue.Enqueue(ev)
 		c.Assert(err, IsNil)
-		_, err = ep.EventQueue.Enqueue(ev2)
+		_, err = ep.eventQueue.Enqueue(ev2)
 		c.Assert(err, IsNil)
 		close(ev2EnqueueCh)
-		_, err = ep.EventQueue.Enqueue(ev3)
+		_, err = ep.eventQueue.Enqueue(ev3)
 		c.Assert(err, IsNil)
 	}()
 
 	// Ensure that the second event is enqueued before proceeding further, as
 	// we need to assume that at least one event is being processed, and another
-	// one is pushed onto the endpoint's EventQueue.
+	// one is pushed onto the endpoint's eventQueue.
 	<-ev2EnqueueCh
 	epDelComplete := make(chan struct{})
 

@@ -93,7 +93,7 @@ func NewEventQueueBuffered(name string, numBufferedEvents int) *EventQueue {
 	log.WithFields(logrus.Fields{
 		"name":              name,
 		"numBufferedEvents": numBufferedEvents,
-	}).Debug("creating new EventQueue")
+	}).Debug("creating new eventQueue")
 	return &EventQueue{
 		name: name,
 		// Up to numBufferedEvents can be Enqueued until Enqueueing blocks.
@@ -227,7 +227,7 @@ func (ev *Event) printStats(q *EventQueue) {
 			"eventHandlingDuration":        ev.stats.durationStat.Total(),
 			"eventEnqueueWaitTime":         ev.stats.waitEnqueue.Total(),
 			"eventConsumeOffQueueWaitTime": ev.stats.waitConsumeOffQueue.Total(),
-		}).Debug("EventQueue event processing statistics")
+		}).Debug("eventQueue event processing statistics")
 	}
 }
 
@@ -284,7 +284,7 @@ func (q *EventQueue) Stop() {
 	}
 
 	q.closeOnce.Do(func() {
-		q.getLogger().Debug("stopping EventQueue")
+		q.getLogger().Debug("stopping eventQueue")
 		// Any event that is sent to the queue at this point will be cancelled
 		// immediately in Enqueue().
 		close(q.drain)
