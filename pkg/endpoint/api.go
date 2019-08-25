@@ -54,7 +54,7 @@ func (e *Endpoint) GetLabelsModel() (*models.LabelConfiguration, error) {
 			Disabled:         e.OpLabels.Disabled.GetModel(),
 		},
 	}
-	e.RUnlock()
+	e.runlock()
 	return &cfg, nil
 }
 
@@ -568,7 +568,7 @@ func (e *Endpoint) ApplyUserLabelChanges(lbls labels.Labels) (add, del labels.La
 	}
 
 	add, del = e.OpLabels.SplitUserLabelChanges(lbls)
-	e.RUnlock()
+	e.runlock()
 
 	return
 }
