@@ -533,3 +533,26 @@ func (e *Endpoint) ProcessChangeRequest(newEp *Endpoint, validPatchTransitionSta
 
 	return reason, nil
 }
+
+func (e *Endpoint) GetConfigSpecModel() *models.EndpointConfigurationStatus {
+	return &models.EndpointConfigurationStatus{
+		Realized: &models.EndpointConfigurationSpec{
+			LabelConfiguration: &models.LabelConfigurationSpec{
+				User: e.OpLabels.Custom.GetModel(),
+			},
+			Options: *e.Options.GetMutableModel(),
+		},
+		Immutable: *e.Options.GetImmutableModel(),
+	}
+}
+
+func (e *Endpoint) ApplyUserLabelChanges(lbls labels.Labels) (add, del labels.Labels, err error) {
+	if err := e.RLockAlive(); err != nil {
+		return nil, nil, err
+	}
+
+	add, del = e.OpLabels.SplitUserLabelChanges(lbls)
+	e.RUnlock()
+
+	return
+}
