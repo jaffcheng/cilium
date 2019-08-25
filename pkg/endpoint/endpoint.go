@@ -500,6 +500,24 @@ func (e *Endpoint) HasSidecarProxy() bool {
 // global map should be used.
 // Must be called with the endpoint locked.
 func (e *Endpoint) ConntrackName() string {
+	e.UnconditionalRLock()
+	defer e.RUnlock()
+	return e.conntrackName()
+}
+
+// ConntrackName returns the name suffix for the endpoint-specific bpf
+// conntrack map, which is a 5-digit endpoint ID, or "global" when the
+// global map should be used.
+// Must be called with the endpoint locked.
+func (e *Endpoint) ConntrackNameLocked() string {
+	return e.conntrackName()
+}
+
+// ConntrackName returns the name suffix for the endpoint-specific bpf
+// conntrack map, which is a 5-digit endpoint ID, or "global" when the
+// global map should be used.
+// Must be called with the endpoint locked.
+func (e *Endpoint) conntrackName() string {
 	if e.ConntrackLocalLocked() {
 		return fmt.Sprintf("%05d", int(e.ID))
 	}
@@ -968,7 +986,7 @@ func (e *Endpoint) leaveLocked(proxyWaitGroup *completion.WaitGroup, conf Delete
 	}
 
 	if e.ConntrackLocalLocked() {
-		ctmap.CloseLocalMaps(e.ConntrackName())
+		ctmap.CloseLocalMaps(e.conntrackName())
 	} else if !option.Config.DryMode {
 		e.scrubIPsInConntrackTableLocked()
 	}
@@ -2219,4 +2237,10 @@ func (e *Endpoint) setDefaultPolicyConfig() {
 	alwaysEnforce := policy.GetPolicyEnabled() == option.AlwaysEnforce
 	e.desiredPolicy.IngressPolicyEnabled = alwaysEnforce
 	e.desiredPolicy.EgressPolicyEnabled = alwaysEnforce
+}
+
+func (e *Endpoint) GetProxyInfoByFields() (uint64, string, string, []string, string, uint64) {
+	e.UnconditionalRLock()
+	defer e.RUnlock()
+	return e.GetID(), e.GetIPv4Address(), e.GetIPv6Address(), e.GetLabels(), e.GetLabelsSHA(), uint64(e.GetIdentity())
 }
