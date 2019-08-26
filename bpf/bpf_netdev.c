@@ -205,7 +205,7 @@ static inline int handle_ipv6(struct __sk_buff *skb, __u32 src_identity)
 			return TC_ACT_OK;
 		else
 			return ret;
-	} else if (likely(ipv6_match_prefix_96(dst, &node_ip))) {
+	} else {
 		struct endpoint_key key = {};
 		int ret;
 
@@ -222,6 +222,8 @@ static inline int handle_ipv6(struct __sk_buff *skb, __u32 src_identity)
 			return TC_ACT_OK;
 		else if (ret != DROP_NO_TUNNEL_ENDPOINT)
 			return ret;
+		if (!revalidate_data(skb, &data, &data_end, &ip6))
+			return DROP_INVALID;
 	}
 #endif
 
@@ -392,6 +394,8 @@ static inline int handle_ipv4(struct __sk_buff *skb, __u32 src_identity)
 			return TC_ACT_OK;
 		else if (ret != DROP_NO_TUNNEL_ENDPOINT)
 			return ret;
+		if (!revalidate_data(skb, &data, &data_end, &ip4))
+			return DROP_INVALID;
 	}
 #endif
 

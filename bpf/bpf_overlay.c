@@ -40,11 +40,11 @@
 #ifdef ENABLE_IPV6
 static inline int handle_ipv6(struct __sk_buff *skb, __u32 *identity)
 {
+	int ret, l4_off, l3_off = ETH_HLEN, hdrlen;
 	void *data_end, *data;
 	struct ipv6hdr *ip6;
 	struct bpf_tunnel_key key = {};
 	struct endpoint_info *ep;
-	int l4_off, l3_off = ETH_HLEN, hdrlen;
 	bool decrypted;
 
 	/* verifier workaround (dereference of modified ctx ptr) */
@@ -57,6 +57,9 @@ static inline int handle_ipv6(struct __sk_buff *skb, __u32 *identity)
 			return ret;
 	}
 #endif
+	ret = encap_remap_v6_host_address(skb, false);
+	if (unlikely(ret < 0))
+		return ret;
 	if (!revalidate_data(skb, &data, &data_end, &ip6))
 		return DROP_INVALID;
 
