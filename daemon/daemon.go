@@ -898,9 +898,7 @@ func NewDaemon(dp datapath.Datapath, iptablesManager rulesManager) (*Daemon, *en
 	// This needs to be done after the node addressing has been configured
 	// as the node address is required as suffix.
 	// well known identities have already been initialized above
-	// Ignore the channel returned by this function, as we want the global
-	// identity allocator to run asynchronously.
-	cache.InitIdentityAllocator(&d, k8s.CiliumClient(), nil)
+	cache.GlobalIdentityAllocatorManager = cache.NewIdentityAllocatorManager(&d, k8s.CiliumClient(), nil)
 
 	d.bootstrapClusterMesh(nodeMngr)
 
