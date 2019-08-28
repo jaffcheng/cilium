@@ -533,3 +533,8 @@ func (e *Endpoint) ProcessChangeRequest(newEp *Endpoint, validPatchTransitionSta
 
 	return reason, nil
 }
+
+// GetStatusModel returns the model of the status of this endpoint.
+func (e *Endpoint) GetStatusModel() []*models.EndpointStatusChange {
+	return e.Status.GetModel()
+}
